@@ -1,0 +1,6 @@
+numpy>=1.23,<3
+opencv-python>=4.7,<5
+Pillow>=9.2
+pytesseract>=0.3.10
+PyYAML>=6
+# Optional: pip install ultralytics>=8.3
