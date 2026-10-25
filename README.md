@@ -1,23 +1,108 @@
-# VolgaIT 2026 PlateVision
+# VolgaIT 2026 — PlateVision
 
-Offline Russian vehicle plate recognition research project for the Volga-IT semifinal.
+**PlateVision** — проект для полуфинала олимпиады «Волга-IT» по направлению «Искусственный интеллект и анализ данных». Цель — создать полностью автономную систему распознавания нестандартных российских государственных регистрационных знаков (ГРЗ).
 
-## Supported classes
-- `type1`: standard single-row white plates
-- `type1a`: two-row white plates
-- `type1b`: yellow passenger-transport plates
-- `other`: non-target signs
+> **Текущий статус:** опубликована инженерная основа решения. Обученные веса моделей, полный датасет и подтверждённые замеры точности и скорости пока не представлены. Репозиторий ещё нельзя считать завершённой конкурсной работой.
 
-## Included
-- `src/infer.py` — inference CLI
-- `src/train.py` — detector training script
-- `dataset/generator/generate.py` — reproducible synthetic sample generator
-- `docs/EXPLANATORY_NOTE.md` — architecture and limitations
+## Поддерживаемые классы
 
-## Status
-**Engineering baseline only.** The repository does not yet contain trained model weights, a complete licensed real-world dataset, or independently validated accuracy and latency results. Do not describe it as a competition-ready trained submission.
+| Класс | Описание |
+| --- | --- |
+| `type1` | Стандартный белый однострочный автомобильный номер |
+| `type1a` | Белый двухстрочный (квадратный) номер |
+| `type1b` | Жёлтый номер пассажирского транспорта |
+| `other` | Нецелевые номера и другие случаи |
 
-## Submission requirements
-Provide trained weights, complete legally shareable dataset with `meta.csv` and labels, license/source records, official validator report, and benchmark results. The inference target is a semicolon-separated UTF-8 CSV with `image;plate_num;plate_type;confidence`.
+Для целевых классов используется шаблон: буква, три цифры, две буквы и код региона из двух или трёх цифр. Допустимые буквы: `A B E K M H O P C T Y X`.
 
-See the Python sources for interfaces. Offline execution may require local dependencies and model files.
+## Структура репозитория
+
+```text
+src/
+  infer.py                 # обработка изображений и вывод CSV
+  train.py                 # обучение детектора
+  core.py                  # вспомогательные функции поиска и OCR
+dataset/
+  generator/generate.py    # генератор синтетических примеров
+  README.md
+  LICENSE
+tools/
+  validate_output.py       # проверка формата CSV
+  validate_local.py        # предварительная проверка датасета
+tests/
+  test_core.py             # модульные тесты
+docs/
+  EXPLANATORY_NOTE.md      # пояснительная записка
+.github/workflows/
+  quality.yml              # автоматические проверки
+requirements.txt
+SUBMISSION_CHECKLIST.md
+```
+
+## Установка
+
+Требуется Python и зависимости из `requirements.txt`. Для OCR также необходим локально установленный Tesseract OCR; для использования YOLO — библиотека Ultralytics и веса модели.
+
+```bash
+git clone https://github.com/bezachka/VolgaIT2026PlateVision.git
+cd VolgaIT2026PlateVision
+python -m pip install -r requirements.txt
+```
+
+Для обучения YOLO дополнительно потребуется установить соответствующую библиотеку и подготовить датасет согласно формату обучающего скрипта.
+
+## Запуск распознавания
+
+После подготовки входного каталога можно запустить базовый пайплайн:
+
+```bash
+python -m src.infer --input images --output result.csv
+```
+
+Если обученная модель присутствует локально, её можно передать отдельным параметром:
+
+```bash
+python -m src.infer --input images --output result.csv --weights models/best.pt
+```
+
+**Внимание:** файл `models/best.pt` пока не опубликован. Базовый алгоритм распознавания не гарантирует конкурсную точность или скорость.
+
+## Формат результата
+
+Выходной файл — CSV в кодировке UTF-8 с разделителем `;`:
+
+```csv
+image;plate_num;plate_type;confidence
+```
+
+Одному найденному номеру соответствует одна строка. Если номеров несколько, формируются несколько строк. Если номер не найден, строка для изображения не добавляется.
+
+## Проверка
+
+```bash
+python -m unittest discover -s tests -v
+python tools/validate_output.py sample_predictions.csv
+```
+
+После формирования датасета с `dataset/meta.csv` доступна локальная структурная проверка:
+
+```bash
+python tools/validate_local.py --dataset dataset
+```
+
+Она **не заменяет официальный валидатор организаторов**.
+
+## Данные и воспроизводимость
+
+В репозитории опубликован исходный код генератора синтетических изображений. Полный набор изображений и метаданных пока не размещён. Для конкурсной сдачи требуются реальные примеры с подтверждёнными правами использования, синтетический датасет, разметка и отчёт валидатора. Нельзя включать отладочные изображения организаторов в обучающий набор.
+
+## Что осталось до сдачи
+
+- Подготовить и выложить полный размеченный датасет.
+- Собрать и проверить лицензионно допустимые реальные фотографии.
+- Обучить детектор и модель распознавания символов; приложить веса.
+- Проверить обобщающую способность на независимом наборе.
+- Измерить скорость на референсном оборудовании (целевое значение — не более 100 мс на изображение).
+- Выполнить официальный валидатор и приложить его отчёт.
+
+Подробности приведены в [пояснительной записке](docs/EXPLANATORY_NOTE.md) и [контрольном списке сдачи](SUBMISSION_CHECKLIST.md).
