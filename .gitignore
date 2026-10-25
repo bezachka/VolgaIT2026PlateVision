@@ -218,3 +218,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+runs/
+predictions.csv
+result.csv
+models/*.pt
+models/*.onnx
